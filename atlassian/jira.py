@@ -316,7 +316,7 @@ class Jira(AtlassianRestAPI):
         params = {}
         if included_archived:
             params['includeArchived'] = included_archived
-        return self.get('rest/api/2/project')
+        return self.get('rest/api/3/project')
 
     def get_all_projects(self, included_archived=None):
         return self.projects(included_archived)
