@@ -81,7 +81,7 @@ class AtlassianRestAPI(object):
     #added for oauth 2    
 
     def _create_oauth2_session(self, oauth_dict):
-        oauth = OAuth2(client_id=oauth_dict['consumer_key'],
+        oauth = OAuth2(client_id=oauth_dict['client_id'],
                        rsa_key=oauth_dict['key_cert'], signature_method=SIGNATURE_RSA,
                        resource_owner_key=oauth_dict['access_token'],
                        resource_owner_secret=oauth_dict['access_token_secret'])
