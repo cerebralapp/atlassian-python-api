@@ -44,7 +44,7 @@ class AtlassianRestAPI(object):
             self._create_basic_session(username, password)
         #added for oauth2
         elif oauth2 is not None:
-            self._create_oauth2_session(oauth)
+            self._create_oauth2_session(oauth2)
         elif oauth is not None:
             self._create_oauth_session(oauth)
         elif kerberos is not None:
