@@ -70,22 +70,23 @@ class AtlassianRestAPI(object):
         response.raise_for_status()
 
     def _create_oauth_session(self, oauth_dict):
-        token_dict = dict()
-        token_dict['access_token']=oauth_dict['access_token']
-        token_dict['refresh_token'] = oauth_dict['access_token']
-        token_dict['token_type'] = 'bearer'
-        oauth2 = OAuth1(client_id= oauth_dict['client_id'],
-                       token=token_dict)
-        self._session.auth = oauth2
-
-    #added for oauth 2    
-
-    def _create_oauth2_session(self, oauth_dict):
-        oauth = OAuth2(client_id=oauth_dict['client_id'],
+        oauth = OAuth1(client_id=oauth_dict['consumer_key'],
                        rsa_key=oauth_dict['key_cert'], signature_method=SIGNATURE_RSA,
                        resource_owner_key=oauth_dict['access_token'],
                        resource_owner_secret=oauth_dict['access_token_secret'])
         self._session.auth = oauth
+
+    #added for oauth 2    
+
+    def _create_oauth2_session(self, oauth_dict):
+        print("in oauth 2 method")
+        token_dict = dict()
+        token_dict['access_token']=oauth_dict['access_token']
+        token_dict['refresh_token'] = oauth_dict['access_token']
+        token_dict['token_type'] = 'bearer'
+        oauth2 = OAuth2(client_id= oauth_dict['client_id'],
+                       token=token_dict)
+        self._session.auth = oauth2
 
     def _update_header(self, key, value):
         """
