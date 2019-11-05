@@ -82,7 +82,6 @@ class AtlassianRestAPI(object):
         print("in oauth 2 method")
         token_dict = dict()
         token_dict['access_token']=oauth_dict['access_token']
-        token_dict['refresh_token'] = oauth_dict['access_token']
         token_dict['token_type'] = 'bearer'
         oauth2 = OAuth2(client_id= oauth_dict['client_id'],
                        token=token_dict)
