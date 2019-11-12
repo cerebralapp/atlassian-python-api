@@ -1922,7 +1922,8 @@ class Jira(AtlassianRestAPI):
         :return:
         """
         # url = 'rest/agile/1.0/board'
-        url = 'rest/greenhopper/1.0/board'
+        url = 'rest/agile/latest/board'
+        # url = 'rest/greenhopper/1.0/board'
         params = {}
         if board_name:
             params['name'] = board_name
