@@ -2155,5 +2155,6 @@ class Jira(AtlassianRestAPI):
         # params['dataType'] = 'repository'
 
         url = '/rest/dev-status/latest/issue/detail?issueId={issue_id}&applicationType=GitHub&dataType=branch'.format(issue_id=issue_id)
+        print("url",url)
         return self.get(url)
 
