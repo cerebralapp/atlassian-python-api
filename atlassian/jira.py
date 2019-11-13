@@ -2140,3 +2140,20 @@ class Jira(AtlassianRestAPI):
             # check as support tools
             response = self.get('rest/supportHealthCheck/1.0/check/')
         return response
+
+    # Dev methods
+
+    def get_commit_details(self, issue_id):
+        """
+        Get agile board info by id
+        :param board_id:
+        :return:
+        """
+        # params =  {}
+        # params['issueId']=issue_id
+        # params['applicationType'] = 'stash'
+        # params['dataType'] = 'repository'
+
+        url = '/rest/dev-status/1.0/issue/detail?issueId={issue_id}&applicationType=stash&dataType=repository'.format(issue_id=issue_id)
+        return self.get(url)
+
