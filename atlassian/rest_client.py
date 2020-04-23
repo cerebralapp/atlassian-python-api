@@ -23,7 +23,7 @@ class AtlassianRestAPI(object):
 
     def __init__(self, url, username=None, password=None, timeout=60, api_root='rest/api', api_version='latest',
                  verify_ssl=True, session=None, oauth=None, cookies=None, advanced_mode=None, kerberos=None,
-                 cloud=False, proxies=None, oauth2=None):
+                 cloud=False, proxies=None, oauth2=None, jiraconnect=None):
         if ('atlassian.net' in url or 'jira.com' in url) \
                 and '/wiki' not in url \
                 and self.__class__.__name__ in 'Confluence':
@@ -54,6 +54,9 @@ class AtlassianRestAPI(object):
             self._create_kerberos_session(kerberos)
         elif cookies is not None:
             self._session.cookies.update(cookies)
+        #added for jiraconnect
+        elif jiraconnect is not None:
+            self._create_jiraconnect_session(jiraconnect_dict)
 
     def _create_basic_session(self, username, password):
         self._session.auth = (username, password)
