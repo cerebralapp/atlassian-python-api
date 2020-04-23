@@ -2528,7 +2528,6 @@ class Jira(AtlassianRestAPI):
             response = self.get('rest/supportHealthCheck/1.0/check/')
         return response
 
-<<<<<<< HEAD
     # Dev methods
 
     def get_commit_details(self, issue_id):
@@ -2546,7 +2545,7 @@ class Jira(AtlassianRestAPI):
         print("url",url)
         return self.get(url)
 
-=======
+
     # Audit Records
     def get_audit_records(self, offset=None, limit=None, filter=None, from_date=None, to_date=None):
         """
