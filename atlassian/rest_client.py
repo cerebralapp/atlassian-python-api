@@ -56,7 +56,7 @@ class AtlassianRestAPI(object):
             self._session.cookies.update(cookies)
         #added for jiraconnect
         elif jiraconnect is not None:
-            self._create_jiraconnect_session(jiraconnect_dict)
+            self._create_jiraconnect_session(jiraconnect)
 
     def _create_basic_session(self, username, password):
         self._session.auth = (username, password)
