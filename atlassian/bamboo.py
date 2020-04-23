@@ -9,7 +9,6 @@ log = logging.getLogger(__name__)
 
 
 class Bamboo(AtlassianRestAPI):
-
     """ Private methods """
 
     def _get_generator(self, path, elements_key='results', element_key='result', data=None, flags=None,
@@ -34,7 +33,7 @@ class Bamboo(AtlassianRestAPI):
         :return: generator with the contents of response[elements_key][element_key]
         """
         start_index = 0
-        params['start-index'] = start_index
+        params["start-index"] = start_index
         response = self.get(path, data, flags, params, headers)
         if self.advanced_mode:
             try:
@@ -45,22 +44,22 @@ class Bamboo(AtlassianRestAPI):
                 yield e
         try:
             results = response[elements_key]
-            size = 0 
+            size = 0
             # Check if we still can get results
-            if size > max_results or results['size'] == 0:
+            if size > max_results or results["size"] == 0:
                 return
             for r in results[element_key]:
                 size += 1
                 yield r
-            start_index += results['max-result']
+            start_index += results["max-result"]
         except TypeError:
             logging.error("Broken response: {}".format(response))
             yield response
-        
 
-    def base_list_call(self, resource, expand, favourite, clover_enabled, max_results, label=None, start_index=0, **kwargs):
+    def base_list_call(self, resource, expand, favourite, clover_enabled, max_results, label=None, start_index=0,
+                       **kwargs):
         flags = []
-        params = {'max-results': max_results}
+        params = {"max-results": max_results}
         if expand:
             params['expand'] = expand
         if favourite:
@@ -88,14 +87,17 @@ class Bamboo(AtlassianRestAPI):
         resource = 'project/{}'.format(project_key)
         return self.base_list_call(resource, expand, favourite, clover_enabled, start_index=0, max_results=25)
 
-    def project_plans(self, project_key):
+    def project_plans(self, project_key, start_index=0, max_results=25):
         """
         Returns a generator with the plans in a given project
         :param project_key: Project key
+        :param start_index:
+        :param max_results:
         :return: Generator with plans
         """
-        resource = 'project/{}'.format(project_key, max_results=25)
-        return self.base_list_call(resource, expand='plans', favourite=False, clover_enabled=False, max_results=25,
+        resource = 'project/{}'.format(project_key, max_results=max_results)
+        return self.base_list_call(resource, expand='plans', favourite=False,
+                                   clover_enabled=False, start_index=start_index, max_results=max_results,
                                    elements_key='plans', element_key='plan')
 
     def plans(self, expand=None, favourite=False, clover_enabled=False, start_index=0, max_results=25):
@@ -131,6 +133,15 @@ class Bamboo(AtlassianRestAPI):
         resource = 'rest/api/latest/plan/{}'.format(plan_key)
         return self.delete(resource)
 
+    def disable_plan(self, plan_key):
+        """
+        Disable plan.
+        :param plan_key: str TST-BLD
+        :return: DELETE request
+        """
+        resource = 'plan/{plan_key}/enable'.format(plan_key=plan_key)
+        return self.delete(self.resource_url(resource))
+
     def enable_plan(self, plan_key):
         """
         Enable plan.
@@ -142,10 +153,10 @@ class Bamboo(AtlassianRestAPI):
 
     """ Branches """
 
-    def search_branches(self, plan_key, include_default_branch=True, max_results=25):
+    def search_branches(self, plan_key, include_default_branch=True, max_results=25, start=0):
         params = {
             'max-result': max_results,
-            'start-index': 0,
+            'start-index': start,
             'masterPlanKey': plan_key,
             'includeMasterBranch': include_default_branch
         }
@@ -202,12 +213,14 @@ class Bamboo(AtlassianRestAPI):
         :return:
         """
         resource = 'plan/{plan_key}/vcsBranches'.format(plan_key=plan_key)
-        return self.base_list_call(resource, start_index=0, max_results=max_results)
+        return self.base_list_call(resource, start_index=0, max_results=max_results, clover_enabled=None, expand=None,
+                                   favourite=None)
 
     """ Build results """
 
     def results(self, project_key=None, plan_key=None, job_key=None, build_number=None, expand=None, favourite=False,
-                clover_enabled=False, issue_key=None, label=None, start_index=0, max_results=25, include_all_states=False):
+                clover_enabled=False, issue_key=None, label=None, start_index=0, max_results=25,
+                include_all_states=False):
         """
         Get results as generic method
         :param project_key:
@@ -258,7 +271,8 @@ class Bamboo(AtlassianRestAPI):
         :return:
         """
         return self.results(expand=expand, favourite=favourite, clover_enabled=clover_enabled,
-                            label=label, issue_key=issue_key, start_index=start_index, max_results=max_results, include_all_states=include_all_states)
+                            label=label, issue_key=issue_key, start_index=start_index, max_results=max_results,
+                            include_all_states=include_all_states)
 
     def project_latest_results(self, project_key, expand=None, favourite=False, clover_enabled=False, label=None,
                                issue_key=None, start_index=0, max_results=25, include_all_states=False):
@@ -276,7 +290,8 @@ class Bamboo(AtlassianRestAPI):
         :return:
         """
         return self.results(project_key, expand=expand, favourite=favourite, clover_enabled=clover_enabled,
-                            label=label, issue_key=issue_key, start_index=start_index, max_results=max_results, include_all_states=include_all_states)
+                            label=label, issue_key=issue_key, start_index=start_index, max_results=max_results,
+                            include_all_states=include_all_states)
 
     def plan_results(self, project_key, plan_key, expand=None, favourite=False, clover_enabled=False, label=None,
                      issue_key=None, start_index=0, max_results=25, include_all_states=False):
@@ -295,9 +310,10 @@ class Bamboo(AtlassianRestAPI):
         :return:
         """
         return self.results(project_key, plan_key, expand=expand, favourite=favourite, clover_enabled=clover_enabled,
-                            label=label, issue_key=issue_key, start_index=start_index, max_results=max_results, include_all_states=include_all_states)
+                            label=label, issue_key=issue_key, start_index=start_index, max_results=max_results,
+                            include_all_states=include_all_states)
 
-    def build_result(self, build_key, expand=None, include_all_states=False):
+    def build_result(self, build_key, expand=None, include_all_states=False, start=0, max_results=25):
         """
         Returns details of a specific build result
         :param expand: expands build result details on request. Possible values are: artifacts, comments, labels,
@@ -306,12 +322,15 @@ class Bamboo(AtlassianRestAPI):
         :param build_key: Should be in the form XX-YY[-ZZ]-99, that is, the last token should be an integer representing
         the build number
         :param include_all_states
+        :param start:
+        :param max_results:
         """
         try:
             int(build_key.split('-')[-1])
             resource = "result/{}".format(build_key)
             return self.base_list_call(resource, expand, favourite=False, clover_enabled=False,
-                                       start_index=0, max_results=25, include_all_states=include_all_states)
+                                       start_index=start, max_results=max_results,
+                                       include_all_states=include_all_states)
         except ValueError:
             raise ValueError('The key "{}" does not correspond to a build result'.format(build_key))
 
@@ -334,7 +353,7 @@ class Bamboo(AtlassianRestAPI):
     def delete_build_result(self, build_key):
         """
         Deleting result for specific build
-        :param build_key: Take full build key, example: PROJ-PLAN-8
+        :param build_key: Take full build key, example: PROJECT-PLAN-8
         """
         custom_resource = '/build/admin/deletePlanResults.action'
         build_key = build_key.split('-')
@@ -354,7 +373,6 @@ class Bamboo(AtlassianRestAPI):
         :param bamboo_variables: dict {variable=value} 
         :return: POST request
         """
-        headers = self.form_token_headers
         resource = 'queue/{plan_key}'.format(plan_key=plan_key)
         params = {}
         if stage:
@@ -367,7 +385,16 @@ class Bamboo(AtlassianRestAPI):
             for key, value in bamboo_variables.items():
                 params['bamboo.variable.{}'.format(key)] = value
 
-        return self.post(self.resource_url(resource), params=params, headers=headers)
+        return self.post(self.resource_url(resource), params=params)
+
+    def stop_build(self, plan_key):
+        """
+        Stop the build which is in progress at the moment. 
+        :param plan_key: str TST-BLD
+        :return: GET request
+        """
+        resource = "/build/admin/stopPlan.action?planKey={}".format(plan_key)
+        return self.get(path=resource)
 
     """ Comments & Labels """
 
@@ -392,6 +419,25 @@ class Bamboo(AtlassianRestAPI):
 
     def delete_label(self, project_key, plan_key, build_number, label):
         resource = "result/{}-{}-{}/label/{}".format(project_key, plan_key, build_number, label)
+        return self.delete(self.resource_url(resource))
+
+    def get_projects(self):
+        """Method used to list all projects defined in Bamboo.
+        Projects without any plan are not listed by default, unless showEmpty query param is set to true."""
+        resource = 'project?showEmpty'
+        for project in self.get(self.resource_url(resource)):
+            yield project
+
+    def get_project(self, project_key):
+        """Method used to retrieve information for project specified as project key.
+        Possible expand parameters: plans, list of plans for project. plans.plan, list of plans with plan details
+        (only plans visible - READ permission for user)"""
+        resource = 'project/{}?showEmpty'.format(project_key)
+        return self.get(self.resource_url(resource))
+
+    def delete_project(self, project_key):
+        """Marks project for deletion. Project will be deleted by a batch job."""
+        resource = 'project/{}'.format(project_key)
         return self.delete(self.resource_url(resource))
 
     """ Deployments """
@@ -578,6 +624,20 @@ class Bamboo(AtlassianRestAPI):
             params['height'] = height
         return self.get(self.resource_url('chart'), params=params)
 
+    def reindex(self):
+        """
+        Returns status of the current indexing operation.
+        reindexInProgress - reindex is currently performed in background reindexPending - reindex is required
+        (i.e. it failed before or some upgrade task asked for it)
+        """
+        return self.get(self.resource_url('reindex'))
+
+    def stop_reindex(self):
+        """
+        Kicks off a reindex. Requires system admin permissions to perform this reindex.
+        """
+        return self.post(self.resource_url('reindex'))
+
     def health_check(self):
         """
         Get health status
@@ -600,10 +660,8 @@ class Bamboo(AtlassianRestAPI):
         files = {
             'plugin': open(plugin_path, 'rb')
         }
-        headers = {
-            'X-Atlassian-Token': 'nocheck'
-        }
-        upm_token = self.request(method='GET', path='rest/plugins/1.0/', headers=headers, trailing=True).headers[
-            'upm-token']
+        upm_token = \
+            self.request(method='GET', path='rest/plugins/1.0/', headers=self.no_check_headers, trailing=True).headers[
+                'upm-token']
         url = 'rest/plugins/1.0/?token={upm_token}'.format(upm_token=upm_token)
-        return self.post(url, files=files, headers=headers)
+        return self.post(url, files=files, headers=self.no_check_headers)

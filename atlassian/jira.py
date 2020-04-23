@@ -1,8 +1,6 @@
 # coding=utf-8
 import logging
-
-from requests.exceptions import HTTPError
-
+import re
 from .rest_client import AtlassianRestAPI
 
 log = logging.getLogger(__name__)
@@ -62,7 +60,7 @@ class Jira(AtlassianRestAPI):
         :param start: OPTIONAL: The start point of the collection to return. Default: 0.
         :param limit: OPTIONAL: The limit of the number of issues to return, this may be restricted by
                 fixed system limits. Default by built-in method: 50
-        :param expand: OPTIONAL: expland the search result
+        :param expand: OPTIONAL: expand the search result
         :return:
         """
         params = {}
@@ -92,16 +90,30 @@ class Jira(AtlassianRestAPI):
         url = 'sr/jira.issueviews:searchrequest-csv-all-fields/temp/SearchRequest.csv'
         return self.get(url, params=params, not_json_response=True, headers={'Accept': 'application/csv'})
 
-    def user(self, username, expand=None):
+    def user(self, username=None, key=None, expand=None):
         """
         Returns a user. This resource cannot be accessed anonymously.
+        You can use only one parameter: username or key
+
         :param username:
+        :param key: if username and key are different
         :param expand: Can be 'groups,applicationRoles'
         :return:
         """
-        params = {'username': username}
+        params = {}
+
+        if username and not key:
+            params = {'username': username}
+        elif not username and key:
+            params = {'key': key}
+        elif username and key:
+            return 'You cannot specify both the username and the key parameters'
+        elif not username and not key:
+            return 'You must specify at least one parameter: username or key'
+
         if expand:
             params['expand'] = expand
+
         return self.get('rest/api/3/user', params=params)
 
     def is_active_user(self, username):
@@ -139,6 +151,16 @@ class Jira(AtlassianRestAPI):
         """
         data = {"name": new_username}
         return self.user_update(old_username, data=data)
+
+    def user_update_email(self, username, email):
+        """
+        Update user email for new domain changes
+        :param username:
+        :param email:
+        :return:
+        """
+        data = {'name': username, 'emailAddress': email}
+        return self.user_update(username, data=data)
 
     def user_create(self, username, email, display_name, password=None, notification=None):
         """
@@ -220,42 +242,15 @@ class Jira(AtlassianRestAPI):
         params = {'username': username, 'property': key, 'value': value}
         return self.get(url, params=params)
 
-    def user_update_email(self, username, email):
-        """
-        Update user email for new domain changes
-        :param username:
-        :param email:
-        :return:
-        """
-        data = {'name': username, 'emailAddress': email}
-        return self.user_update(username, data=data)
-
     def user_deactivate(self, username):
         """
-        Disable user
+        Disable user. Works from 8.3.0 Release
+        https://docs.atlassian.com/software/jira/docs/api/REST/8.3.0/#api/2/user-updateUser
         :param username:
         :return:
         """
-        url = 'secure/admin/user/EditUser.jspa'
-        headers = self.form_token_headers
-        user = self.user(username)
-        data = {
-            'inline': 'true',
-            'decorator': 'dialog',
-            'username': user['name'],
-            'fullName': user['displayName'],
-            'email': user['emailAddress'],
-            'editName': user['name']
-        }
-        answer = self.get('secure/admin/WebSudoAuthenticate.jspa', self.form_token_headers)
-        atl_token = None
-        if answer:
-            atl_token = \
-                answer.split('<meta id="atlassian-token" name="atlassian-token" content="')[1].split('\n')[0].split(
-                    '"')[0]
-        if atl_token:
-            data['atl_token'] = atl_token
-        return self.post(data=data, path=url, headers=headers)
+        data = {"active": "false", "name": username}
+        return self.user_update(username=username, data=data)
 
     def user_disable(self, username):
         """Override the disable method"""
@@ -306,6 +301,52 @@ class Jira(AtlassianRestAPI):
                   'maxResults': limit
                   }
         return self.get(url, params=params)
+
+    def is_user_in_application(self, username, application_key):
+        """
+        Utility function to test whether a user has an application role
+        :param username: The username of the user to test.
+        :param application_key: The application key of the application
+        :return: True if the user has the application, else False
+        """
+        user = self.user(username, 'applicationRoles')  # Get applications roles of the user
+        if 'self' in user:
+            for application_role in user.get('applicationRoles').get('items'):
+                if application_role.get('key') == application_key:
+                    return True
+        return False
+
+    def add_user_to_application(self, username, application_key):
+        """
+        Add a user to an application
+        :param username: The username of the user to add.
+        :param application_key: The application key of the application
+        :return: True if the user was added to the application, else False
+        :see: https://docs.atlassian.com/software/jira/docs/api/REST/7.5.3/#api/2/user-addUserToApplication
+        """
+        params = {
+            'username': username,
+            'applicationKey': application_key
+        }
+        return self.post('rest/api/2/user/application', params=params) is None
+
+    # Application roles
+    def get_all_application_roles(self):
+        """
+        Returns all ApplicationRoles in the system
+        :return:
+        """
+        url = 'rest/api/2/applicationrole'
+        return self.get(url) or {}
+
+    def get_application_role(self, role_key):
+        """
+        Returns the ApplicationRole with passed key if it exists
+        :param role_key: str
+        :return:
+        """
+        url = 'rest/api/2/applicationrole/{}'.format(role_key)
+        return self.get(url) or {}
 
     def projects(self, included_archived=None):
         """Returns all projects which are visible for the currently logged in user.
@@ -384,8 +425,8 @@ class Jira(AtlassianRestAPI):
         :param project_key: the project key
         :param project_id: the project id
         :param version: the new project version to add
-        :is_archived:
-        :is_released:
+        :param is_archived:
+        :param is_released:
         :return:
         """
         payload = {'name': version, 'archived': is_archived, 'released': is_released, 'project': project_key,
@@ -498,14 +539,44 @@ class Jira(AtlassianRestAPI):
     def issue(self, key, fields='*all'):
         return self.get('rest/api/3/issue/{0}?fields={1}'.format(key, fields))
 
+    def get_issue(self, issue_id_or_key, fields=None, properties=None, update_history=True):
+        """
+        Returns a full representation of the issue for the given issue key
+        By default, all fields are returned in this get-issue resource
+
+        :param issue_id_or_key: str
+        :param fields: str
+        :param properties: str
+        :param update_history: bool
+        :return: issue
+        """
+        url = 'rest/api/2/issue/{}'.format(issue_id_or_key)
+        params = {}
+
+        if fields is not None:
+            params['fields'] = fields
+        if properties is not None:
+            params['properties'] = properties
+        if update_history is True:
+            params['updateHistory'] = 'true'
+        if update_history is False:
+            params['updateHistory'] = 'false'
+
+        return self.get(url, params=params)
+
     def bulk_issue(self, issue_list, fields='*all'):
         """
         :param fields:
         :param list issue_list:
         :return:
         """
+        jira_issue_regex = re.compile(r'[A-Z]{1,10}-\d+')
         missing_issues = list()
-        jql = 'key in ({})'.format(', '.join(['"{}"'.format(key) for key in issue_list]))
+        matched_issue_keys = list()
+        for key in issue_list:
+            if re.match(jira_issue_regex, key):
+                matched_issue_keys.append(key)
+        jql = 'key in ({})'.format(', '.join(set(matched_issue_keys)))
         query_result = self.jql(jql, fields=fields)
         if 'errorMessages' in query_result.keys():
             for message in query_result['errorMessages']:
@@ -551,6 +622,16 @@ class Jira(AtlassianRestAPI):
             data['comment'] = comment
         return self.issue_add_json_worklog(key=key, worklog=data)
 
+    def issue_get_worklog(self, issue_id_or_key):
+        """
+        Returns all work logs for an issue.
+        Note: Work logs won't be returned if the Log work field is hidden for the project.
+        :param issue_id_or_key:
+        :return:
+        """
+        url = "rest/api/2/issue/{issueIdOrKey}/worklog".format(issueIdOrKey=issue_id_or_key)
+        return self.get(url)
+
     def issue_field_value(self, key, field):
         issue = self.get('rest/api/3/issue/{0}?fields={1}'.format(key, field))
         return issue['fields'][field]
@@ -579,7 +660,7 @@ class Jira(AtlassianRestAPI):
         if limit:
             params['maxResults'] = limit
         return self.get(url, params=params)
-    
+
     def create_custom_field(self, name, type, search_key=None, description=None):
         """
         Creates a custom field with the given name and type
@@ -836,31 +917,76 @@ class Jira(AtlassianRestAPI):
         return self.delete(url, params=params)
 
     def issue_exists(self, issue_key):
+        original_value = self.advanced_mode
+        self.advanced_mode = True
         try:
-            self.issue(issue_key, fields='*none')
+            resp = self.issue(issue_key, fields="*none")
+            if resp.status_code == 404:
+                log.info(
+                    'Issue "{issue_key}" does not exists'.format(issue_key=issue_key)
+                )
+                return False
+            resp.raise_for_status()
             log.info('Issue "{issue_key}" exists'.format(issue_key=issue_key))
             return True
-        except HTTPError as e:
-            if e.response.status_code == 404:
-                log.info('Issue "{issue_key}" does not exists'.format(issue_key=issue_key))
-                return False
-            else:
-                log.info('Issue "{issue_key}" existed, but now it\'s deleted'.format(issue_key=issue_key))
-                return True
+        finally:
+            self.advanced_mode = original_value
 
     def issue_deleted(self, issue_key):
-        try:
-            self.issue(issue_key, fields='*none')
+        exists = self.issue_exists(issue_key)
+        if exists:
             log.info('Issue "{issue_key}" is not deleted'.format(issue_key=issue_key))
-            return False
-        except HTTPError:
+        else:
             log.info('Issue "{issue_key}" is deleted'.format(issue_key=issue_key))
-            return True
+        return not exists
 
+    def delete_issue(self, issue_id_or_key, delete_subtasks=True):
+        """
+        Delete an issue
+        If the issue has subtasks you must set the parameter delete_subtasks = True to delete the issue
+        You cannot delete an issue without its subtasks also being deleted
+        :param issue_id_or_key:
+        :param delete_subtasks:
+        :return:
+        """
+        url = 'rest/api/2/issue/{}'.format(issue_id_or_key)
+        params = {}
+
+        if delete_subtasks is True:
+            params['deleteSubtasks'] = 'true'
+        else:
+            params['deleteSubtasks'] = 'false'
+
+        log.warning('Removing issue {}...'.format(issue_id_or_key))
+
+        return self.delete(url, params=params)
+
+    # @todo merge with edit_issue method
     def issue_update(self, issue_key, fields):
         log.warning('Updating issue "{issue_key}" with "{fields}"'.format(issue_key=issue_key, fields=fields))
         url = 'rest/api/3/issue/{0}'.format(issue_key)
         return self.put(url, data={'fields': fields})
+
+    def edit_issue(self, issue_id_or_key, fields, notify_users=True):
+        """
+        Edits an issue from a JSON representation
+        The issue can either be updated by setting explicit the field
+        value(s) or by using an operation to change the field value
+
+        :param issue_id_or_key: str
+        :param fields: JSON
+        :param notify_users: bool
+        :return:
+        """
+        url = 'rest/api/2/issue/{}'.format(issue_id_or_key)
+        params = {}
+        data = {'update': fields}
+
+        if notify_users is True:
+            params['notifyUsers'] = 'true'
+        else:
+            params['notifyUsers'] = 'false'
+        return self.put(url, data=data, params=params)
 
     def issue_add_watcher(self, issue_key, user):
         """
@@ -886,8 +1012,37 @@ class Jira(AtlassianRestAPI):
 
         return self.put(url, data=data)
 
+    def create_issue(self, fields, update_history=False):
+        """
+        Creates an issue or a sub-task from a JSON representation
+        :param fields: JSON data
+        :param update_history: bool (if true then the user's project history is updated)
+        :return:
+        """
+        url = 'rest/api/2/issue'
+        data = {'fields': fields}
+        params = {}
+
+        if update_history is True:
+            params['updateHistory'] = 'true'
+        else:
+            params['updateHistory'] = 'false'
+        return self.post(url, params=params, data=data)
+
+    def create_issues(self, list_of_issues_data):
+        """
+        Creates issues or sub-tasks from a JSON representation
+        Creates many issues in one bulk operation
+        :param list_of_issues_data: list of JSON data
+        :return:
+        """
+        url = 'rest/api/2/issue/bulk'
+        data = {'issueUpdates': list_of_issues_data}
+        return self.post(url, data=data)
+
+    # @todo refactor and merge with create_issue method
     def issue_create(self, fields):
-        log.warning('Creating issue "{summary}"'.format(summary=fields['summary']))
+        log.warning('Creating issue "{summary}"'.format(summary=fields['summary']))        
         url = 'rest/api/3/issue/'
         return self.post(url, data={'fields': fields})
 
@@ -896,7 +1051,7 @@ class Jira(AtlassianRestAPI):
 
         if not issue_key or not self.issue_exists(issue_key):
             log.info('IssueKey is not provided or does not exists in destination. Will attempt to create an issue')
-            del fields['issuekey']
+            fields.pop("issuekey", None)
             return self.issue_create(fields)
 
         if self.issue_deleted(issue_key):
@@ -904,7 +1059,7 @@ class Jira(AtlassianRestAPI):
             return None
 
         log.info('Issue "{issue_key}" exists, will update'.format(issue_key=issue_key))
-        del fields['issuekey']
+        fields.pop("issuekey", None)
         return self.issue_update(issue_key, fields)
 
     def issue_add_comment(self, issue_key, comment, visibility=None):
@@ -921,19 +1076,60 @@ class Jira(AtlassianRestAPI):
             data['visibility'] = visibility
         return self.post(url, data=data)
 
+    def issue_edit_comment(self, issue_key, comment_id, comment, visibility=None):
+        """
+        Updates an existing comment
+        :param issue_key: str
+        :param comment_id: int
+        :param comment: str
+        :param visibility: OPTIONAL
+        :return:
+        """
+        url = 'rest/api/2/issue/{}/comment/{}'.format(issue_key, comment_id)
+        data = {'body': comment}
+        if visibility:
+            data['visibility'] = visibility
+        return self.put(url, data=data)
+
+    # Attachments
+    def get_attachment(self, attachment_id):
+        """
+        Returns the meta-data for an attachment, including the URI of the actual attached file
+        :param attachment_id: int
+        :return:
+        """
+        url = 'rest/api/2/attachment/{}'.format(attachment_id)
+        return self.get(url)
+
+    def remove_attachment(self, attachment_id):
+        """
+        Remove an attachment from an issue
+        :param attachment_id: int
+        :return: if success, return None
+        """
+        url = 'rest/api/2/attachment/{}'.format(attachment_id)
+        return self.delete(url)
+
+    def get_attachment_meta(self):
+        """
+        Returns the meta information for an attachments,
+        specifically if they are enabled and the maximum upload size allowed
+        :return:
+        """
+        url = 'rest/api/2/attachment/meta'
+        return self.get(url)
+
     def add_attachment(self, issue_key, filename):
         """
         Add attachment to Issue
-
         :param issue_key: str
         :param filename: str, name, if file in current directory or full path to file
         """
         log.warning('Adding attachment...')
         headers = {'X-Atlassian-Token': 'no-check'}
-        with open(filename, 'rb') as file:
-            files = {'file': file}
-            url = 'rest/api/3/issue/{}/attachments'.format(issue_key)
-
+        url = 'rest/api/3/issue/{}/attachments'.format(issue_key)
+        with open(filename, 'rb') as attachment:
+            files = {'file': attachment}
             return self.post(url, headers=headers, files=files)
 
     def get_issue_remotelinks(self, issue_key, global_id=None, internal_id=None):
@@ -1291,13 +1487,11 @@ class Jira(AtlassianRestAPI):
         files = {
             'plugin': open(plugin_path, 'rb')
         }
-        headers = {
-            'X-Atlassian-Token': 'nocheck'
-        }
-        upm_token = self.request(method='GET', path='rest/plugins/1.0/', headers=headers, trailing=True).headers[
-            'upm-token']
+        upm_token = \
+            self.request(method='GET', path='rest/plugins/1.0/', headers=self.no_check_headers, trailing=True).headers[
+                'upm-token']
         url = 'rest/plugins/1.0/?token={upm_token}'.format(upm_token=upm_token)
-        return self.post(url, files=files, headers=headers)
+        return self.post(url, files=files, headers=self.no_check_headers)
 
     def delete_plugin(self, plugin_key):
         """
@@ -1316,11 +1510,38 @@ class Jira(AtlassianRestAPI):
         url = 'rest/plugins/latest/safe-mode'
         return self.request(method='GET', path=url, headers=headers)
 
+    # API/2 Get permissions
+    def get_permissions(self, project_id=None, project_key=None, issue_id=None, issue_key=None):
+        """
+        Returns all permissions in the system and whether the currently logged in user has them.
+        You can optionally provide a specific context
+        to get permissions for (projectKey OR projectId OR issueKey OR issueId)
+
+        :param project_id: str
+        :param project_key: str
+        :param issue_id: str
+        :param issue_key: str
+        :return:
+        """
+        url = 'rest/api/2/mypermissions'
+        params = {}
+
+        if project_id:
+            params['projectId'] = project_id
+        if project_key:
+            params['projectKey'] = project_key
+        if issue_id:
+            params['issueId'] = issue_id
+        if issue_key:
+            params['issueKey'] = issue_key
+
+        return self.get(url, params=params)
+
     def get_all_permissions(self):
         """
         Returns all permissions that are present in the Jira instance -
         Global, Project and the global ones added by plugins
-        :return:
+        :return: All permissions
         """
         url = 'rest/api/3/permissions'
         return self.get(url)
@@ -1426,6 +1647,109 @@ class Jira(AtlassianRestAPI):
         else:
             return self.get(url)
 
+    # Priority Schemes
+    def get_all_priority_schemes(self, start=0, limit=100, expand=None):
+        """
+        Returns all priority schemes.
+        All project keys associated with the priority scheme will only be returned
+        if additional query parameter is provided expand=schemes.projectKeys.
+        :param start: the page offset, if not specified then defaults to 0
+        :param limit: how many results on the page should be included. Defaults to 100, maximum is 1000.
+        :param expand: can be 'schemes.projectKeys'
+        :return:
+        """
+        url = 'rest/api/2/priorityschemes'
+        params = {}
+        if start:
+            params['startAt'] = int(start)
+        if limit:
+            params['maxResults'] = int(limit)
+        if expand:
+            params['expand'] = expand
+        return self.get(url, params=params)
+
+    def create_priority_scheme(self, data):
+        """
+        Creates new priority scheme.
+        :param data:
+                {"name": "New priority scheme",
+                "description": "Priority scheme for very important projects",
+                "defaultOptionId": "3",
+                "optionIds": [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5"
+                ]}
+        :return: Returned if the priority scheme was created.
+        """
+        return self.post(path="rest/api/2/priorityschemes", data=data)
+
+    # api/2/project/{projectKeyOrId}/priorityscheme
+    # Resource for associating priority schemes and projects.
+    def get_priority_scheme_of_project(self, project_key_or_id):
+        """
+        Gets a full representation of a priority scheme in JSON format used by specified project.
+        User must be global administrator or project administrator.
+        :param project_key_or_id:
+        :return:
+        """
+        url = 'rest/api/2/project/{}/priorityscheme'.format(project_key_or_id)
+        return self.get(url)
+
+    def assign_priority_scheme_for_project(self, project_key_or_id, priority_scheme_id):
+        """
+        Assigns project with priority scheme. Priority scheme assign with migration is possible from the UI.
+        Operation will fail if migration is needed as a result of operation
+        eg. there are issues with priorities invalid in the destination scheme.
+        All project keys associated with the priority scheme will only be returned
+        if additional query parameter is provided expand=projectKeys.
+        :param project_key_or_id:
+        :param priority_scheme_id:
+        :return:
+        """
+        url = "rest/api/2/project/{projectKeyOrId}/priorityscheme".format(projectKeyOrId=project_key_or_id)
+        data = {"id": priority_scheme_id}
+        return self.put(url, data=data)
+
+    # Application properties
+    def get_property(self, key=None, permission_level=None, key_filter=None):
+        """
+        Returns an application property
+
+        :param key: str
+        :param permission_level: str
+        :param key_filter: str
+        :return: list or item
+        """
+        url = 'rest/api/2/application-properties'
+        params = {}
+
+        if key:
+            params['key'] = key
+        if permission_level:
+            params['permissionLevel'] = permission_level
+        if key_filter:
+            params['keyFilter'] = key_filter
+
+        return self.get(url, params=params)
+
+    def set_property(self, property_id, value):
+        url = 'rest/api/2/application-properties/{}'.format(property_id)
+        data = {'id': property_id, 'value': value}
+
+        return self.put(url, data=data)
+
+    def get_advanced_settings(self):
+        """
+        Returns the properties that are displayed on the "General Configuration > Advanced Settings" page
+        :return:
+        """
+        url = 'rest/api/2/application-properties/advanced-settings'
+
+        return self.get(url)
+
     """
     #######################################################################
     #                   Tempo Account REST API implements                 #
@@ -1519,6 +1843,16 @@ class Jira(AtlassianRestAPI):
         """
         url = 'rest/tempo-accounts/1/account/{id}/'.format(id=account_id)
         return self.delete(url)
+
+    def tempo_account_get_rate_table_by_account_id(self, account_id):
+        """
+        Returns a rate table for the specified account.
+        :param account_id: the account id.
+        :return:
+        """
+        params = {'scopeType': "ACCOUNT", 'scopeId': account_id}
+        url = 'rest/tempo-accounts/1/ratetable'
+        return self.get(url, params=params)
 
     def tempo_account_get_all_account_by_customer_id(self, customer_id):
         """
@@ -1739,6 +2073,45 @@ class Jira(AtlassianRestAPI):
         url = 'rest/tempo-timesheets/3/worklogs/'
         return self.get(url, params=params)
 
+    def tempo_4_timesheets_find_worklogs(self, **params):
+        """
+        Find existing worklogs with searching parameters.
+        NOTE: check if you are using correct types for the parameters!
+        :param from: string From Date
+        :param to: string To Date
+        :param worker: Array of strings
+        :param taskId: Array of integers
+        :param taskKey: Array of strings
+        :param projectId: Array of integers
+        :param projectKey: Array of strings
+        :param teamId: Array of integers
+        :param roleId: Array of integers
+        :param accountId: Array of integers
+        :param accountKey: Array of strings
+        :param filterId: Array of integers
+        :param customerId: Array of integers
+        :param categoryId: Array of integers
+        :param categoryTypeId: Array of integers
+        :param epicKey: Array of strings
+        :param updatedFrom: string
+        :param includeSubtasks: boolean
+        :param pageNo: integer
+        :param maxResults: integer
+        :param offset: integer
+        """
+
+        url = "rest/tempo-timesheets/4/worklogs/search"
+        return self.post(url, data=params)
+
+    def tempo_timesheets_get_worklogs_by_issue(self, issue):
+        """
+        Get Tempo timesheet worklog by issue key or id.
+        :param issue: Issue key or Id
+        :return:
+        """
+        url = "rest/tempo-timesheets/4/worklogs/jira/issue/{issue}".format(issue=issue)
+        return self.get(url)
+
     def tempo_timesheets_write_worklog(self, worker, started, time_spend_in_seconds, issue_id, comment=None):
         """
         Log work for user
@@ -1771,6 +2144,7 @@ class Jira(AtlassianRestAPI):
             params['periodStartDate'] = period_start_date
         if user_key:
             params['userKey'] = user_key
+        return self.get(url, params=params)
 
     def tempo_timesheets_get_required_times(self, from_date, to_date, user_name):
         """
@@ -1828,14 +2202,13 @@ class Jira(AtlassianRestAPI):
         """
         Add team member
         :param team_id:
-        :param member_key:
+        :param member_key: user_name or user_key of Jira
         :return:
         """
         data = {"member": {"key": str(member_key), "type": "USER"},
-                "membership": {
-                    "availability": "100",
-                    "role": {"id": 1}
-                }}
+                "membership": {"availability": "100",
+                               "role": {"id": 1}}
+                }
         return self.tempo_teams_add_member_raw(team_id, member_data=data)
 
     def tempo_teams_add_membership(self, team_id, member_id):
@@ -2094,7 +2467,8 @@ class Jira(AtlassianRestAPI):
         A sprint can be started by updating the state to 'active'.
         This requires the sprint to be in the 'future' state and have a startDate and endDate set.
         A sprint can be completed by updating the state to 'closed'.
-        This action requires the sprint to be in the 'active' state. This sets the completeDate to the time of the request.
+        This action requires the sprint to be in the 'active' state.
+        This sets the completeDate to the time of the request.
         Other changes to state are not allowed.
         The completeDate field cannot be updated manually.
         :param sprint_id:
@@ -2128,6 +2502,19 @@ class Jira(AtlassianRestAPI):
         url = 'rest/agile/1.0/sprint/{sprintId}/issue'.format(sprintId=sprint_id)
         return self.get(url, params=params)
 
+    def update_rank(self, issues_to_rank, rank_before, customfield_number):
+        """
+        Updates the rank of issues (max 50), placing them before a given issue.
+        :param issues_to_rank: List of issues to rank (max 50)
+        :param rank_before: Issue that the issues will be put over
+        :param customfield_number: The number of the custom field Rank
+        :return:
+        """
+        return self.put('rest/agile/1.0/issue/rank', data={
+            'issues': issues_to_rank,
+            'rankBeforeIssue': rank_before,
+            'rankCustomFieldId': customfield_number})
+
     def health_check(self):
         """
         Get health status
@@ -2141,6 +2528,7 @@ class Jira(AtlassianRestAPI):
             response = self.get('rest/supportHealthCheck/1.0/check/')
         return response
 
+<<<<<<< HEAD
     # Dev methods
 
     def get_commit_details(self, issue_id):
@@ -2158,3 +2546,44 @@ class Jira(AtlassianRestAPI):
         print("url",url)
         return self.get(url)
 
+=======
+    # Audit Records
+    def get_audit_records(self, offset=None, limit=None, filter=None, from_date=None, to_date=None):
+        """
+        Returns auditing records filtered using provided parameters
+        :param offset: the number of record from which search starts
+        :param limit: maximum number of returned results (if is limit is <= 0 or > 1000,
+                      it will be set do default value: 1000)
+        :param filter:	string = text query; each record that will be returned
+                        must contain the provided text in one of its fields
+        :param from_date: string	 - timestamp in past; 'from' must be less or equal 'to',
+                             otherwise the result set will be empty only records that
+                             where created in the same moment or after the 'from' timestamp will be provided in response
+        :param to_date: string	- timestamp in past; 'from' must be less or equal 'to',
+                              otherwise the result set will be empty only records that
+                              where created in the same moment or earlier than the 'to'
+                              timestamp will be provided in response
+        :return:
+        """
+        params = {}
+        if offset:
+            params["offset"] = offset
+        if limit:
+            params["limit"] = limit
+        if filter:
+            params["filter"] = filter
+        if from_date:
+            params["from"] = from_date
+        if to_date:
+            params["to"] = to_date
+        url = "rest/api/2/auditing/record"
+        return self.get(url, params=params) or {}
+
+    def post_audit_record(self, audit_record):
+        """
+        Store a record in Audit Log
+        :param audit_record: json with compat https://docs.atlassian.com/jira/REST/schema/audit-record#
+        :return:
+        """
+        url = "rest/api/2/auditing/record"
+        return self.post(url, data=audit_record)

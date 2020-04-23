@@ -42,6 +42,39 @@ Add a connection:
         url='http://localhost:8080',
         username='admin',
         password='admin')
+        
+        
+Key/Cert Based authentication
+-----------------------------
+
+Add a connection using key/cert based authentication:
+
+.. code-block:: python
+
+    from atlassian import Jira
+    from atlassian import Confluence
+    from atlassian import Bitbucket
+    from atlassian import ServiceDesk
+
+    jira = Jira(
+        url='http://localhost:8080',
+        key='/path/to/key',
+        cert='/path/to/cert')
+
+    confluence = Confluence(
+        url='http://localhost:8090',
+        key='/path/to/key',
+        cert='/path/to/cert')
+
+    bitbucket = Bitbucket(
+        url='http://localhost:7990',
+        key='/path/to/key',
+        cert='/path/to/cert')
+
+    service_desk = ServiceDesk(
+        url='http://localhost:8080',
+        key='/path/to/key',
+        cert='/path/to/cert')
 
 Alternatively OAuth can be used:
 
@@ -91,13 +124,36 @@ Or Kerberos *(installation with kerberos extra necessary)*:
         url='http://localhost:8080',
         kerberos=kerberos_service)
 
+Or reuse cookie file:
+
+.. code-block:: python
+
+    from atlassian import utils
+    cookie_dict = utils.parse_cookie_file("cookie.txt")
+
+    jira = Jira(
+        url='http://localhost:8080',
+        cookie=cookie_dict)
+
+    confluence = Confluence(
+        url='http://localhost:8090',
+        cookie=cookie_dict)
+
+    bitbucket = Bitbucket(
+        url='http://localhost:7990',
+        cookie=cookie_dict)
+
+    service_desk = ServiceDesk(
+        url='http://localhost:8080',
+        cookie=cookie_dict)
 
 .. toctree::
-   :maxdept:2
+   :maxdepth: 2
 
    jira
    confluence
    bitbucket
+   bamboo
    service_desk
 
 .. |Build Status| image:: https://travis-ci.org/atlassian-api/atlassian-python-api.svg?branch=master

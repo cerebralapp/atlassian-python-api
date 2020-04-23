@@ -18,11 +18,12 @@ class AtlassianRestAPI(object):
                             'X-ExperimentalApi': 'opt-in'}
     form_token_headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                           'X-Atlassian-Token': 'no-check'}
-
+    no_check_headers = {'X-Atlassian-Token': 'no-check'}
     response = None
 
     def __init__(self, url, username=None, password=None, timeout=60, api_root='rest/api', api_version='latest',
-                 verify_ssl=True, session=None, oauth=None, cookies=None, advanced_mode=None, kerberos=None, oauth2=None):
+                 verify_ssl=True, session=None, oauth=None, cookies=None, advanced_mode=None, kerberos=None,
+                 cloud=False, proxies=None, oauth2=None):
         if ('atlassian.net' in url or 'jira.com' in url) \
                 and '/wiki' not in url \
                 and self.__class__.__name__ in 'Confluence':
@@ -36,6 +37,8 @@ class AtlassianRestAPI(object):
         self.api_version = api_version
         self.cookies = cookies
         self.advanced_mode = advanced_mode
+        self.cloud = cloud
+        self.proxies = proxies
         if session is None:
             self._session = requests.Session()
         else:
@@ -49,6 +52,8 @@ class AtlassianRestAPI(object):
             self._create_oauth_session(oauth)
         elif kerberos is not None:
             self._create_kerberos_session(kerberos)
+        elif cookies is not None:
+            self._session.cookies.update(cookies)
 
     def _create_basic_session(self, username, password):
         self._session.auth = (username, password)
@@ -152,7 +157,8 @@ class AtlassianRestAPI(object):
         :param trailing: bool
         :return:
         """
-        self.log_curl_debug(method=method, path=path, headers=headers, data=data, trailing=None)
+        self.log_curl_debug(method=method, path=path, headers=headers,
+                            data=data, trailing=trailing)
         url = self.url_joiner(self.url, path, trailing)
         if params or flags:
             url += '?'
@@ -161,7 +167,7 @@ class AtlassianRestAPI(object):
         if flags:
             url += ('&' if params else '') + '&'.join(flags or [])
         if files is None:
-            data = json.dumps(data)
+            data = None if not data else json.dumps(data)
 
         headers = headers or self.default_headers
         response = self._session.request(
@@ -171,48 +177,16 @@ class AtlassianRestAPI(object):
             data=data,
             timeout=self.timeout,
             verify=self.verify_ssl,
-            files=files
+            files=files,
+            proxies=self.proxies
         )
         response.encoding = 'utf-8'
+
         if self.advanced_mode:
-            self.response = response
             return response
-        try:
-            if response.text:
-                response_content = response.json()
-            else:
-                response_content = response.content
-        except ValueError:
-            response_content = response.content
-        if response.status_code == 200:
-            log.debug('Received: {0}\n {1}'.format(response.status_code, response_content))
-        elif response.status_code == 201:
-            log.debug('Received: {0}\n "Created" response'.format(response.status_code))
-        elif response.status_code == 204:
-            log.debug('Received: {0}\n "No Content" response'.format(response.status_code))
-        elif response.status_code == 400:
-            log.error('Received: {0}\n Bad request \n'.format(response.status_code, response_content))
-        elif response.status_code == 401:
-            log.error('Received: {0}\n "UNAUTHORIZED" response'.format(response.status_code))
-        elif response.status_code == 404:
-            log.error('Received: {0}\n Not Found'.format(response.status_code))
-        elif response.status_code == 403:
-            log.error('Received: {0}\n Forbidden. Please, check permissions'.format(response.status_code))
-        elif response.status_code == 405:
-            log.error('Received: {0}\n Method not allowed'.format(response.status_code))
-        elif response.status_code == 409:
-            log.error('Received: {0}\n Conflict \n '.format(response.status_code, response_content))
-        elif response.status_code == 413:
-            log.error('Received: {0}\n Request entity too large'.format(response.status_code))
-        else:
-            log.debug('Received: {0}\n {1}'.format(response.status_code, response))
-            self.log_curl_debug(method=method, path=path, headers=headers, data=data, level=logging.DEBUG)
-            log.error(response_content)
-            try:
-                response.raise_for_status()
-            except requests.exceptions.HTTPError as err:
-                log.error("HTTP Error occurred")
-                log.error('Response is: {content}'.format(content=err.response.content))
+
+        log.debug("HTTP: {} {} -> {} {}".format(method, path, response.status_code, response.reason))
+        response.raise_for_status()
         return response
 
     def get(self, path, data=None, flags=None, params=None, headers=None, not_json_response=None, trailing=None):
@@ -228,7 +202,7 @@ class AtlassianRestAPI(object):
         :return:
         """
         response = self.request('GET', path=path, flags=flags, params=params, data=data, headers=headers,
-                              trailing=trailing)
+                                trailing=trailing)
         if self.advanced_mode:
             return response
         if not_json_response:
