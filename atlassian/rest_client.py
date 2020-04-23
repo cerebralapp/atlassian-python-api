@@ -87,6 +87,19 @@ class AtlassianRestAPI(object):
                        token=token_dict)
         self._session.auth = oauth2
 
+    # added for Atlassian Connect
+
+    def _create_jiraconnect_session(self, jiraconnect_dict):
+        try:
+            token = jiraconnect_dict['token']
+        except KeyError as e:
+            log.debug(e)
+
+        if token:
+            auth_header = 'JWT {}'.format(token)
+            self._update_header("Authorization", auth_header)
+
+
     def _update_header(self, key, value):
         """
         Update header for exist session
