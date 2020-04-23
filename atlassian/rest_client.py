@@ -179,10 +179,8 @@ class AtlassianRestAPI(object):
         if headers:
             headers = headers
         elif self.headers:
-            headers = self.headers
-        else:
-            headers = self.default_headers
-            
+            headers = {**self.default_headers, **self.headers}
+
         response = self._session.request(
             method=method,
             url=url,
