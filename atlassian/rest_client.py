@@ -180,6 +180,8 @@ class AtlassianRestAPI(object):
             headers = headers
         elif self.headers:
             headers = {**self.default_headers, **self.headers}
+        else:
+            headers = self.headers
 
         response = self._session.request(
             method=method,
