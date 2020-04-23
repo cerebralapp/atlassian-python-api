@@ -106,6 +106,8 @@ class AtlassianRestAPI(object):
         if token:
             auth_header = 'JWT {}'.format(token)
             self._update_header("Authorization", auth_header)
+            response = self._session.get(self.url, verify=self.verify_ssl)
+            response.raise_for_status()
 
 
     def _update_header(self, key, value):
