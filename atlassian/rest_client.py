@@ -6,6 +6,7 @@ import requests
 from oauthlib.oauth1 import SIGNATURE_RSA
 from requests_oauthlib import OAuth1, OAuth2
 from six.moves.urllib.parse import urlencode
+from swjira.utils import generate_jiraconect_headers
 
 from atlassian.request_utils import get_default_logger
 
@@ -99,16 +100,17 @@ class AtlassianRestAPI(object):
     # added for Atlassian Connect
 
     def _create_jiraconnect_session(self, jiraconnect_dict):
-        try:
-            token = jiraconnect_dict['token']
-        except KeyError as e:
-            log.debug(e)
+        self.jira_connect = jiraconnect_dict
+        # try:
+        #     token = jiraconnect_dict['token']
+        # except KeyError as e:
+        #     log.debug(e)
 
-        if token:
-            auth_header = 'JWT {}'.format(token)
-            self._update_header("Authorization", auth_header)
-            response = self._session.get(self.url, verify=self.verify_ssl)
-            response.raise_for_status()
+        # if token:
+        #     auth_header = 'JWT {}'.format(token)
+        #     self._update_header("Authorization", auth_header)
+        #     response = self._session.get(self.url, verify=self.verify_ssl)
+        #     response.raise_for_status()
 
 
     def _update_header(self, key, value):
@@ -176,12 +178,12 @@ class AtlassianRestAPI(object):
             data = None if not data else json.dumps(data)
 
         # headers = headers or self.default_headers
-        if headers:
-            headers = headers
-        elif self.headers:
-            headers = {**self.default_headers, **self.headers}
-        else:
-            headers = self.headers
+        # if headers:
+        #     headers = headers
+        # elif self.headers:
+        #     headers = {**self.default_headers, **self.headers}
+        # else:
+        #     headers = self.headers
 
         response = self._session.request(
             method=method,
@@ -214,6 +216,15 @@ class AtlassianRestAPI(object):
         :param trailing: OPTIONAL: for wrap slash symbol in the end of string
         :return:
         """
+
+        # check if this is jira connect
+        if self.jira_connect:
+            print("self.jira_connect", self.jira_connect)
+            headers = generate_jiraconect_headers(path, 'GET', self.jira_connect['tenant'])
+
+        print("headers in GET", headers)
+
+
         response = self.request('GET', path=path, flags=flags, params=params, data=data, headers=headers,
                                 trailing=trailing)
         if self.advanced_mode:
