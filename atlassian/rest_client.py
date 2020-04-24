@@ -177,6 +177,7 @@ class AtlassianRestAPI(object):
             data = None if not data else json.dumps(data)
 
         headers = headers or self.default_headers
+        print("headers in request",headers)
         # if headers:
         #     headers = headers
         # elif self.headers:
