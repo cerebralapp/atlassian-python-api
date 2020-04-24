@@ -40,6 +40,7 @@ class AtlassianRestAPI(object):
         self.advanced_mode = advanced_mode
         self.cloud = cloud
         self.proxies = proxies
+        self.jira_connect = None
         if session is None:
             self._session = requests.Session()
         else:
