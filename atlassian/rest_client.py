@@ -177,6 +177,13 @@ class AtlassianRestAPI(object):
         if files is None:
             data = None if not data else json.dumps(data)
 
+        # check if this is jira connect
+        if self.jira_connect:
+            print("self.jira_connect", self.jira_connect)
+            headers = generate_jiraconect_headers(url, method, self.jira_connect['tenant'])
+
+        print("headers in request", headers)
+
         headers = headers or self.default_headers
         print("headers in request",headers)
         # if headers:
@@ -217,13 +224,6 @@ class AtlassianRestAPI(object):
         :param trailing: OPTIONAL: for wrap slash symbol in the end of string
         :return:
         """
-
-        # check if this is jira connect
-        if self.jira_connect:
-            print("self.jira_connect", self.jira_connect)
-            headers = generate_jiraconect_headers(path, 'GET', self.jira_connect['tenant'])
-
-        print("headers in GET", headers)
 
 
         response = self.request('GET', path=path, flags=flags, params=params, data=data, headers=headers,
