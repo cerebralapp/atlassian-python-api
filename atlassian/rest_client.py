@@ -179,13 +179,13 @@ class AtlassianRestAPI(object):
 
         # check if this is jira connect
         if self.jira_connect:
-            print("self.jira_connect", self.jira_connect)
+            # print("self.jira_connect", self.jira_connect)
             headers = generate_jiraconect_headers(url, method, self.jira_connect['tenant'])
 
-        print("headers in request", headers)
+        # print("headers in request", headers)
 
         headers = headers or self.default_headers
-        print("headers in request",headers)
+        # print("headers in request",headers)
         # if headers:
         #     headers = headers
         # elif self.headers:
