@@ -2372,6 +2372,36 @@ class Jira(AtlassianRestAPI):
         url = 'rest/agile/1.0/board/{}/configuration'.format(str(board_id))
         return self.get(url)
 
+    # custom
+
+    def get_board_issues(self, board_id, fields, start, limit, fields):
+        """
+        Returns all issues in a board, for a given board Id.
+        This only includes issues that the user has permission to view.
+        By default, the returned issues are ordered by rank.
+        :param board_id:
+        :param start: The starting index of the returned issues.
+                      Base index: 0.
+                      See the 'Pagination' section at the top of this page for more details.
+        :param limit: The maximum number of issues to return per page.
+                      Default: 50.
+                      See the 'Pagination' section at the top of this page for more details.
+                      Note, the total number of issues returned is limited by the property
+                      'jira.search.views.default.max' in your Jira instance.
+                      If you exceed this limit, your results will be truncated.
+        :return:
+        """
+        params = {}
+        if fields:
+            params['fields'] = fields
+        if start:
+            params['startAt'] = start
+        if limit:
+            params['maxResults'] = limit
+        url = 'rest/agile/1.0/board/{boardId}/issue'.format(boardId=board_id)
+        return self.get(url, params=params)
+
+
     def get_issues_for_backlog(self, board_id):
         """
         :param board_id: int, str
