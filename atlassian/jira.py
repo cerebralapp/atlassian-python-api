@@ -2374,7 +2374,7 @@ class Jira(AtlassianRestAPI):
 
     # custom
 
-    def get_board_issues(self, board_id, fields, start, limit, fields):
+    def get_board_issues(self, board_id, start, limit, fields):
         """
         Returns all issues in a board, for a given board Id.
         This only includes issues that the user has permission to view.
