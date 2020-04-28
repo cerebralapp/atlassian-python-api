@@ -2402,10 +2402,17 @@ class Jira(AtlassianRestAPI):
         return self.get(url, params=params)
 
 
-    def get_issues_for_backlog(self, board_id):
+    def get_issues_for_backlog(self, board_id, start, limit, fields):
         """
         :param board_id: int, str
         """
+        params = {}
+        if fields:
+            params['fields'] = fields
+        if start:
+            params['startAt'] = start
+        if limit:
+            params['maxResults'] = limit
         url = 'rest/agile/1.0/board/{board_id}/backlog'.format(board_id=board_id)
         return self.get(url)
 
