@@ -2433,7 +2433,7 @@ class Jira(AtlassianRestAPI):
         url = 'rest/agile/1.0/board/{board_id}/properties'.format(board_id=board_id)
         return self.get(url)
 
-    def get_all_sprint(self, board_id, state=None, start=0, limit=50):
+    def get_all_sprint(self, board_id, state=None, start=0, limit=50, fields=None):
         """
         Returns all sprints from a board, for a given board Id.
         This only includes sprints that the user has permission to view.
@@ -2450,6 +2450,8 @@ class Jira(AtlassianRestAPI):
         :return:
         """
         params = {}
+        if fields:
+            params['fields'] = fields
         if start:
             params['startAt'] = start
         if limit:
