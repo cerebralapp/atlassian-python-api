@@ -339,6 +339,8 @@ class Jira(AtlassianRestAPI):
         url = 'rest/api/2/applicationrole'
         return self.get(url) or {}
 
+    # Restricted
+
     def get_application_role(self, role_key):
         """
         Returns the ApplicationRole with passed key if it exists
@@ -1438,6 +1440,8 @@ class Jira(AtlassianRestAPI):
         url = 'rest/api/3/resolution/{}'.format(priority_id)
         return self.get(url)
 
+    # Restricted
+
     def get_all_workflows(self):
         """
         Provide all workflows for application admin
@@ -2432,6 +2436,18 @@ class Jira(AtlassianRestAPI):
         """
         url = 'rest/agile/1.0/board/{board_id}/properties'.format(board_id=board_id)
         return self.get(url)
+
+    # custom
+
+    def get_agile_board_versions(self, board_id):
+        """
+        Gets a list of all the board properties
+        :param board_id: int, str
+        """
+        url = 'rest/agile/1.0/board/{board_id}/version'.format(board_id=board_id)
+        return self.get(url)
+
+
 
     def get_all_sprint(self, board_id, state=None, start=0, limit=50, fields=None):
         """
