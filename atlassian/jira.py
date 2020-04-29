@@ -2439,13 +2439,18 @@ class Jira(AtlassianRestAPI):
 
     # custom
 
-    def get_agile_board_versions(self, board_id):
+    def get_agile_board_versions(self, board_id, start=0, limit=50):
         """
         Gets a list of all the board properties
         :param board_id: int, str
         """
+        params = {}
+        if start:
+            params['startAt'] = start
+        if limit:
+            params['maxResults'] = limit
         url = 'rest/agile/1.0/board/{board_id}/version'.format(board_id=board_id)
-        return self.get(url)
+        return self.get(url, params=params)
 
 
 
