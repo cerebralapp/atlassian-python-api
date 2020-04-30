@@ -89,7 +89,7 @@ class AtlassianRestAPI(object):
     #added for oauth 2    
 
     def _create_oauth2_session(self, oauth_dict):
-        print("in oauth 2 method")
+        # print("in oauth 2 method")
         token_dict = dict()
         token_dict['access_token']=oauth_dict['access_token']
         token_dict['token_type'] = 'bearer'
