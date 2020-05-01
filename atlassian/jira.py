@@ -2646,3 +2646,13 @@ class Jira(AtlassianRestAPI):
         """
         url = "rest/api/2/auditing/record"
         return self.post(url, data=audit_record)
+
+
+    # license management
+
+    def get_license_data(self, app_key):
+
+        # pass in the app_key of the marketplace app and get the license data
+
+        url = '/rest/atlassian-connect/1/addons/{appKey}'.format(appKey=app_key)
+        return self.get(url)
