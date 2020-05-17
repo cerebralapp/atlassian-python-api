@@ -1474,6 +1474,16 @@ class Jira(AtlassianRestAPI):
         url = 'rest/api/3/priority'
         return self.get(url)
 
+    # custom
+
+    def get_all_issuetypes(self):
+        """
+        Returns a list of all priorities.
+        :return:
+        """
+        url = 'rest/api/3/issuetype'
+        return self.get(url)
+
     def get_all_global_project_roles(self):
         """
         Get all the ProjectRoles available in Jira. Currently this list is global.
