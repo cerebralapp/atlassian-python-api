@@ -2547,7 +2547,8 @@ class Jira(AtlassianRestAPI):
         """
         return self.post('rest/agile/1.0/sprint/{}'.format(sprint_id), data=data)
 
-    def get_sprint_issues(self, sprint_id, start, limit):
+    # customized
+    def get_sprint_issues(self, sprint_id, start, limit, fields=None):
         """
         Returns all issues in a sprint, for a given sprint Id.
         This only includes issues that the user has permission to view.
@@ -2565,6 +2566,8 @@ class Jira(AtlassianRestAPI):
         :return:
         """
         params = {}
+        if fields:
+            params['fields'] = fields
         if start:
             params['startAt'] = start
         if limit:
