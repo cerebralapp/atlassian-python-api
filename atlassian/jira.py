@@ -2575,6 +2575,40 @@ class Jira(AtlassianRestAPI):
         url = 'rest/agile/1.0/sprint/{sprintId}/issue'.format(sprintId=sprint_id)
         return self.get(url, params=params)
 
+
+    # customized
+    def get_epic_issues(self, epicIdOrKey, start, limit, fields=None):
+        """
+        Returns all issues in a sprint, for a given sprint Id.
+        This only includes issues that the user has permission to view.
+        By default, the returned issues are ordered by rank.
+        :param sprint_id:
+        :param start: The starting index of the returned issues.
+                      Base index: 0.
+                      See the 'Pagination' section at the top of this page for more details.
+        :param limit: The maximum number of issues to return per page.
+                      Default: 50.
+                      See the 'Pagination' section at the top of this page for more details.
+                      Note, the total number of issues returned is limited by the property
+                      'jira.search.views.default.max' in your Jira instance.
+                      If you exceed this limit, your results will be truncated.
+        :return:
+        """
+        params = {}
+        if fields:
+            params['fields'] = fields
+        if start:
+            params['startAt'] = start
+        if limit:
+            params['maxResults'] = limit
+            # /rest/agile/1.0/epic/{epicIdOrKey}/issue
+        url = 'rest/agile/1.0/epic/{epicIdOrKey}/issue'.format(epicIdOrKey=epicIdOrKey)
+        return self.get(url, params=params)
+
+
+
+
+
     def update_rank(self, issues_to_rank, rank_before, customfield_number):
         """
         Updates the rank of issues (max 50), placing them before a given issue.
