@@ -90,7 +90,10 @@ class Jira(AtlassianRestAPI):
         url = 'sr/jira.issueviews:searchrequest-csv-all-fields/temp/SearchRequest.csv'
         return self.get(url, params=params, not_json_response=True, headers={'Accept': 'application/csv'})
 
-    def user(self, username=None, key=None, expand=None):
+
+    #customized this method to allow accountId to be passed in
+    
+    def user(self, username=None, key=None, accountId= None, expand=None):
         """
         Returns a user. This resource cannot be accessed anonymously.
         You can use only one parameter: username or key
@@ -102,7 +105,10 @@ class Jira(AtlassianRestAPI):
         """
         params = {}
 
-        if username and not key:
+
+        if accountId and not username and not key:
+            params = {'accountId': accountId}
+        elif username and not key:
             params = {'username': username}
         elif not username and key:
             params = {'key': key}
