@@ -92,7 +92,7 @@ class Jira(AtlassianRestAPI):
 
 
     #customized this method to allow accountId to be passed in
-    
+
     def user(self, username=None, key=None, accountId= None, expand=None):
         """
         Returns a user. This resource cannot be accessed anonymously.
@@ -121,6 +121,28 @@ class Jira(AtlassianRestAPI):
             params['expand'] = expand
 
         return self.get('rest/api/3/user', params=params)
+
+
+    def get_user_email(self, accountId= None, expand=None):
+        """
+        Returns a user's email. This resource cannot be accessed anonymously.
+        You can use only one parameter: accountdId
+        :param accountId:
+        :param expand: Can be 'groups,applicationRoles'
+        :return:
+        """
+        params = {}
+
+
+        if accountId:
+            params = {'accountId': accountId}
+        elif not accountId:
+            return 'You must specify accountId'
+
+        if expand:
+            params['expand'] = expand
+
+        return self.get('rest/api/3/user/email', params=params)
 
     def is_active_user(self, username):
         """
