@@ -2456,7 +2456,7 @@ class Jira(AtlassianRestAPI):
         if limit:
             params['maxResults'] = limit
         url = 'rest/agile/1.0/board/{board_id}/backlog'.format(board_id=board_id)
-        return self.get(url)
+        return self.get(url, params=params)
 
     def delete_agile_board(self, board_id):
         """
