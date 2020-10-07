@@ -551,6 +551,19 @@ class Jira(AtlassianRestAPI):
 
         return self.get(url)
 
+    # custom
+
+    def get_project_assignable_users(self, project_key):
+
+        """
+        Gets all assignable users to a project
+
+        """
+
+        url = 'rest/api/3/user/assignable/search?project={}'.format(project_key)
+
+        return self.get(url)
+
     def create_issue_type(self, name, description='', type='standard'):
         """
         Create a new issue type
