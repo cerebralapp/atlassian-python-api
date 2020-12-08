@@ -2778,7 +2778,7 @@ class Jira(AtlassianRestAPI):
         return self.post(url, data=webhook_data, headers=headers)
 
     # delete hook
-    def delete_webhooks(self, webhook_ids):
+    def delete_webhooks(self, webhook_data):
 
         url = 'rest/api/2/webhook'
         headers={'Content-type':'application/json'}
