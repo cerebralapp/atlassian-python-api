@@ -2750,29 +2750,29 @@ class Jira(AtlassianRestAPI):
     # custom stuff for webhooks @author:mgautam
 
     # create hook
-    def create_webhook(self, webhook_name, url, events = [], jql_filter=None, exclude_issue_details=False):
+    def create_webhook(url, webhook_data):
 
-        webhooks_list = []
-        webhooks_list = [
-            {
-                "name":webhook_name,
-                "events":events,
-                "jqlFilter":jql_filter,
-                "excludeIssueDetails":exclude_issue_details
-            }
-        ]
+        # webhooks_list = []
+        # webhooks_list = [
+        #     {
+        #         "name":webhook_name,
+        #         "events":events,
+        #         "jqlFilter":jql_filter,
+        #         "excludeIssueDetails":exclude_issue_details
+        #     }
+        # ]
 
-        webhook_dict = {
-            "url":url,
-            'webhooks':webhooks_list
-        }
+        # webhook_dict = {
+        #     "url":url,
+        #     'webhooks':webhooks_list
+        # }
 
         # webhook_data = json.dumps(webhook_dict)
-        webhook_data = webhook_dict
+        # webhook_data = webhook_dict
 
         url = '/rest/api/2/webhook'
 
-        print(webhook_data)
+        # print(webhook_data)
 
         return self.post(url, data=webhook_data)
 
