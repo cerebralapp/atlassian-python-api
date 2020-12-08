@@ -2749,10 +2749,10 @@ class Jira(AtlassianRestAPI):
     # custom stuff for webhooks @author:mgautam
 
     # create hook
-    def create_webhook(name, url, events = [], jql_filter=None, exclude_issue_details=False):
+    def create_webhook(webhook_name, url, events = [], jql_filter=None, exclude_issue_details=False):
 
         webhook_dict = {
-            'name':name,
+            'name':webhook_name,
             'url':url,
             'events':events,
             'jqlFilter':jql_filter,
