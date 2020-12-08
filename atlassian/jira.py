@@ -2755,15 +2755,15 @@ class Jira(AtlassianRestAPI):
         webhooks_list = []
         webhooks_list = [
             {
-                'name':webhook_name,
-                'events':events,
-                'jqlFilter':jql_filter,
-                'excludeIssueDetails':exclude_issue_details
+                "name":webhook_name,
+                "events":events,
+                "jqlFilter":jql_filter,
+                "excludeIssueDetails":exclude_issue_details
             }
         ]
 
         webhook_dict = {
-            'url':url,
+            "url":url,
             'webhooks':webhooks_list
         }
 
