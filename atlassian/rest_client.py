@@ -6,7 +6,8 @@ import requests
 from oauthlib.oauth1 import SIGNATURE_RSA
 from requests_oauthlib import OAuth1, OAuth2
 from six.moves.urllib.parse import urlencode
-from swjira.utils import generate_jiraconect_headers
+# from swjira.utils import generate_jiraconect_headers
+from swjira import utils as swjira_utils
 from server.utils import merge_dict
 from atlassian.request_utils import get_default_logger
 
@@ -181,10 +182,10 @@ class AtlassianRestAPI(object):
         if self.jira_connect:
             # print("self.jira_connect", self.jira_connect)
             if not headers:
-                headers = generate_jiraconect_headers(url, method, self.jira_connect)
+                headers = swjira_utils.generate_jiraconect_headers(url, method, self.jira_connect)
             else:
-                headers = merge_dict(headers, generate_jiraconect_headers(url, method, self.jira_connect))
-                
+                headers = merge_dict(headers, swjira_utils.generate_jiraconect_headers(url, method, self.jira_connect))
+
         # print("headers in request", headers)
 
         headers = headers or self.default_headers
