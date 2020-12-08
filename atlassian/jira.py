@@ -2744,3 +2744,35 @@ class Jira(AtlassianRestAPI):
 
         url = '/rest/atlassian-connect/1/addons/{appKey}'.format(appKey=app_key)
         return self.get(url)
+
+
+    # custom stuff for webhooks @author:mgautam
+
+    # create hook
+    def create_webhook(name, url, events = [], jql_filter=None, exclude_issue_details=False):
+
+        webhook_dict = {
+            'name':name,
+            'url':url,
+            'events':events,
+            'jqlFilter':jql_filter,
+            'excludeIssueDetails':exclude_issue_details
+        }
+
+        url = '/rest/webhooks/1.0/webhook'
+
+        return self.post(url, data=webhook_dict)
+
+    # delete hook
+    def delete_webhook(webhook_id):
+
+        url = '/rest/webhooks/1.0/webhook/{webhookId}'.format(webhookId=webhook_id)
+
+        return self.delete(url)
+
+    # get hook
+    def get_webhook(webhook_id):
+
+        url = '/rest/webhooks/1.0/webhook/{webhookId}'.format(webhookId=webhook_id)
+
+        return self.get(url)
