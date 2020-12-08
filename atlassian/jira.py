@@ -2771,7 +2771,7 @@ class Jira(AtlassianRestAPI):
         # webhook_data = webhook_dict
 
         url = '/rest/api/2/webhook'
-        headers={'Content-type':'application/json', 'Accept':'application/json'}
+        headers={'Content-type':'application/json'}
 
         # print(webhook_data)
 
