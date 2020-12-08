@@ -2750,7 +2750,7 @@ class Jira(AtlassianRestAPI):
     # custom stuff for webhooks @author:mgautam
 
     # create hook
-    def create_webhook(url, webhook_data):
+    def create_webhook(self, url, webhook_data):
 
         # webhooks_list = []
         # webhooks_list = [
