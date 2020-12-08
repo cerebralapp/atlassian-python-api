@@ -185,7 +185,7 @@ class AtlassianRestAPI(object):
             else:
                 headers = merge_dict(headers, generate_jiraconect_headers(url, method, self.jira_connect))
                 
-        print("headers in request", headers)
+        # print("headers in request", headers)
 
         headers = headers or self.default_headers
         # print("headers in request",headers)
