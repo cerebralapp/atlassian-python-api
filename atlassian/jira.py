@@ -2767,9 +2767,12 @@ class Jira(AtlassianRestAPI):
             'webhooks':webhooks_list
         }
 
-        webhook_data = json.dumps(webhook_dict)
+        # webhook_data = json.dumps(webhook_dict)
+        webhook_data = webhook_dict
 
         url = '/rest/api/2/webhook'
+
+        print(webhook_data)
 
         return self.post(url, data=webhook_data)
 
