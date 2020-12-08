@@ -2759,20 +2759,20 @@ class Jira(AtlassianRestAPI):
             'excludeIssueDetails':exclude_issue_details
         }
 
-        url = '/rest/webhooks/1.0/webhook'
+        url = '/rest/api/2/webhook'
 
         return self.post(url, data=webhook_dict)
 
     # delete hook
     def delete_webhook(self, webhook_id):
 
-        url = '/rest/webhooks/1.0/webhook/{webhookId}'.format(webhookId=webhook_id)
+        url = '/rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
 
         return self.delete(url)
 
     # get hook
     def get_webhook(self, webhook_id):
 
-        url = '/rest/webhooks/1.0/webhook/{webhookId}'.format(webhookId=webhook_id)
+        url = '/rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
 
         return self.get(url)
