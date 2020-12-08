@@ -2786,10 +2786,14 @@ class Jira(AtlassianRestAPI):
 
     # get hook
     def get_webhook(self, webhook_id):
+        params = {}
+        if webhook_id:
+            params = {'id': webhook_id}
 
-        url = 'rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
+        # url = 'rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
+        url = 'rest/api/2/webhook'
 
-        return self.get(url)
+        return self.get(url, params=params)
 
     # get all hooks
     def get_all_webhooks(self):
