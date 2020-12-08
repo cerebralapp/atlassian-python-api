@@ -2770,7 +2770,7 @@ class Jira(AtlassianRestAPI):
         # webhook_data = json.dumps(webhook_dict)
         # webhook_data = webhook_dict
 
-        url = '/rest/api/2/webhook'
+        url = 'rest/api/2/webhook'
         headers={'Content-type':'application/json'}
 
         # print(webhook_data)
@@ -2780,19 +2780,19 @@ class Jira(AtlassianRestAPI):
     # delete hook
     def delete_webhook(self, webhook_id):
 
-        url = '/rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
+        url = 'rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
 
         return self.delete(url)
 
     # get hook
     def get_webhook(self, webhook_id):
 
-        url = '/rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
+        url = 'rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
 
         return self.get(url)
 
     # get all hooks
     def get_all_webhooks(self):
 
-        url = '/rest/api/2/webhook'
+        url = 'rest/api/2/webhook'
         return self.get(url)
