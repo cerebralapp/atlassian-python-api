@@ -2749,7 +2749,7 @@ class Jira(AtlassianRestAPI):
     # custom stuff for webhooks @author:mgautam
 
     # create hook
-    def create_webhook(webhook_name, url, events = [], jql_filter=None, exclude_issue_details=False):
+    def create_webhook(self, webhook_name, url, events = [], jql_filter=None, exclude_issue_details=False):
 
         webhook_dict = {
             'name':webhook_name,
@@ -2764,14 +2764,14 @@ class Jira(AtlassianRestAPI):
         return self.post(url, data=webhook_dict)
 
     # delete hook
-    def delete_webhook(webhook_id):
+    def delete_webhook(self, webhook_id):
 
         url = '/rest/webhooks/1.0/webhook/{webhookId}'.format(webhookId=webhook_id)
 
         return self.delete(url)
 
     # get hook
-    def get_webhook(webhook_id):
+    def get_webhook(self, webhook_id):
 
         url = '/rest/webhooks/1.0/webhook/{webhookId}'.format(webhookId=webhook_id)
 
