@@ -2,6 +2,7 @@
 import logging
 import re
 from .rest_client import AtlassianRestAPI
+import json
 
 log = logging.getLogger(__name__)
 
@@ -2759,9 +2760,11 @@ class Jira(AtlassianRestAPI):
             'excludeIssueDetails':exclude_issue_details
         }
 
+        webhook_data = json.dumps(webhook_dict)
+
         url = '/rest/api/2/webhook'
 
-        return self.post(url, data=webhook_dict)
+        return self.post(url, data=webhook_data)
 
     # delete hook
     def delete_webhook(self, webhook_id):
