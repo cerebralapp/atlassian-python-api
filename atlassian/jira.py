@@ -2797,7 +2797,7 @@ class Jira(AtlassianRestAPI):
         url = 'rest/api/2/webhook'
         headers={'Content-type':'application/json'}
 
-        return self.get(url, data=webhook_data, headers=header)
+        return self.get(url, data=webhook_data, headers=headers)
 
     # get all hooks
     def get_all_webhooks(self):
