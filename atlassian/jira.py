@@ -2797,10 +2797,22 @@ class Jira(AtlassianRestAPI):
         url = 'rest/api/2/webhook'
         headers={'Content-type':'application/json'}
 
-        return self.get(url, data=webhook_data)
+        return self.get(url, data=webhook_data, headers=header)
 
     # get all hooks
     def get_all_webhooks(self):
 
         url = 'rest/api/2/webhook'
         return self.get(url)
+
+    # refresh hook
+    def refresh_webhook(self, webhook_data):
+        # params = {}
+        # if webhook_id:
+        #     params = {'webhookIds': webhook_id}
+
+        # url = 'rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
+        url = '/rest/api/2/webhook/refresh'
+        headers={'Content-type':'application/json'}
+
+        return self.put(url, data=webhook_data, headers=headers)
