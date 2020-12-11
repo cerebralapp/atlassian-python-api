@@ -2806,7 +2806,7 @@ class Jira(AtlassianRestAPI):
         return self.get(url)
 
     # refresh hook
-    def refresh_webhook(self, webhook_data):
+    def refresh_webhooks(self, webhook_data):
         # params = {}
         # if webhook_id:
         #     params = {'webhookIds': webhook_id}
