@@ -2507,7 +2507,7 @@ class Jira(AtlassianRestAPI):
 
 
     def get_all_sprint(self, board_id, state=None, start=0, limit=50, fields=None):
-        print('FOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
+        print('FOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
         """
         Returns all sprints from a board, for a given board Id.
         This only includes sprints that the user has permission to view.
