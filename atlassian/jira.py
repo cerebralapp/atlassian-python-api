@@ -2617,6 +2617,35 @@ class Jira(AtlassianRestAPI):
         url = 'rest/agile/1.0/sprint/{sprintId}/issue'.format(sprintId=sprint_id)
         return self.get(url, params=params)
 
+    #customized
+    def get_all_epic(self, board_id, state=None, start=0, limit=50, fields=None):
+        """
+        Returns all epics from a board, for a given board Id.
+        This only includes epics that the user has permission to view.
+        :param board_id:
+        :param state: Filters results to epics in specified states.
+                      Valid values: future, active, closed.
+                      You can define multiple states separated by commas, e.g. state=active,closed
+        :param start: The starting index of the returned epics.
+                      Base index: 0.
+                      See the 'Pagination' section at the top of this page for more details.
+        :param limit: The maximum number of epics to return per page.
+                      Default: 50.
+                      See the 'Pagination' section at the top of this page for more details.
+        :return:
+        """
+        params = {}
+        if fields:
+            params['fields'] = fields
+        if start:
+            params['startAt'] = start
+        if limit:
+            params['maxResults'] = limit
+        if state:
+            params['state'] = state
+        url = 'rest/agile/1.0/board/{boardId}/epic'.format(boardId=board_id)
+        return self.get(url, params=params)
+
 
     # customized
     def get_epic_issues(self, epicIdOrKey, start, limit, fields=None):
