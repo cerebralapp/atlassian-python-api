@@ -2649,7 +2649,7 @@ class Jira(AtlassianRestAPI):
 
 
     # customized
-    def get_epic_issues(self, epicIdOrKey, start, limit, fields=None):
+    def get_epic_issues(self, epicIdOrKey, start, limit, fields=None, expand=None):
         """
         Returns all issues in a sprint, for a given sprint Id.
         This only includes issues that the user has permission to view.
@@ -2673,6 +2673,8 @@ class Jira(AtlassianRestAPI):
             params['startAt'] = start
         if limit:
             params['maxResults'] = limit
+        if expand:
+            params['expand'] = expand
             # /rest/agile/1.0/epic/{epicIdOrKey}/issue
         url = 'rest/agile/1.0/epic/{epicIdOrKey}/issue'.format(epicIdOrKey=epicIdOrKey)
         return self.get(url, params=params)
