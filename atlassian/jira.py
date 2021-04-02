@@ -2827,7 +2827,8 @@ class Jira(AtlassianRestAPI):
 
         # url = 'rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
         url = 'rest/api/2/webhook'
-        headers={'Content-type':'application/json'}
+        headers={"Accept": "application/json","Content-type":"application/json"}
+        # headers={'Content-type':'application/json'}
 
         return self.get(url, data=webhook_data, headers=headers)
 
@@ -2835,7 +2836,8 @@ class Jira(AtlassianRestAPI):
     def get_all_webhooks(self):
 
         url = 'rest/api/2/webhook'
-        return self.get(url)
+        headers={"Accept": "application/json","Content-type":"application/json"}
+        return self.get(url, headers=headers)
 
     # refresh hook
     def refresh_webhooks(self, webhook_data):
@@ -2845,6 +2847,7 @@ class Jira(AtlassianRestAPI):
 
         # url = 'rest/api/2/webhook/{webhookId}'.format(webhookId=webhook_id)
         url = '/rest/api/2/webhook/refresh'
-        headers={'Content-type':'application/json'}
+        # headers={'Content-type':'application/json'}
+        headers={"Accept": "application/json","Content-type":"application/json"}
 
         return self.put(url, data=webhook_data, headers=headers)
